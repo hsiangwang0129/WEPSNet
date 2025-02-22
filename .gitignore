@@ -115,4 +115,6 @@ datasets
 weights/
 
 # result
-test_result/
+test_result/__pycache__/
+.ipynb_checkpoints/
+/content/Fast-SCNN-pytorch/test_result
