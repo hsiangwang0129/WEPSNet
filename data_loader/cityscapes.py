@@ -38,7 +38,7 @@ class CitySegmentation(data.Dataset):
     >>>     num_workers=4)
     """
     BASE_DIR = 'cityscapes'
-    NUM_CLASS = 19
+    NUM_CLASS = 2
 
     def __init__(self, root='./datasets/citys', split='train', mode=None, transform=None,
                  base_size=520, crop_size=480, **kwargs):
@@ -53,15 +53,10 @@ class CitySegmentation(data.Dataset):
         assert (len(self.images) == len(self.mask_paths))
         if len(self.images) == 0:
             raise RuntimeError("Found 0 images in subfolders of: " + self.root + "\n")
-        self.valid_classes = [7, 8, 11, 12, 13, 17, 19, 20, 21, 22,
-                              23, 24, 25, 26, 27, 28, 31, 32, 33]
-        self._key = np.array([-1, -1, -1, -1, -1, -1,
-                              -1, -1, 0, 1, -1, -1,
-                              2, 3, 4, -1, -1, -1,
-                              5, -1, 6, 7, 8, 9,
-                              10, 11, 12, 13, 14, 15,
-                              -1, -1, 16, 17, 18])
-        self._mapping = np.array(range(-1, len(self._key) - 1)).astype('int32')
+        self.valid_classes = [0, 1]
+        self._key = np.array([0, 1])  # 0 = 背景, 1 = pantograph
+        self._mapping = np.array([0, 1])  # 对应的类别索引
+
 
     def _class_to_index(self, mask):
         values = np.unique(mask)
@@ -153,6 +148,9 @@ class CitySegmentation(data.Dataset):
         return np.array(img)
 
     def _mask_transform(self, mask):
+        mask_array = np.array(mask)
+        # print("Unique mask values before mapping:", np.unique(mask_array))
+
         target = self._class_to_index(np.array(mask).astype('int32'))
         return torch.LongTensor(np.array(target).astype('int32'))
 
@@ -178,8 +176,8 @@ def _get_city_pairs(folder, split='train'):
                 if filename.endswith(".png"):
                     imgpath = os.path.join(root, filename)
                     foldername = os.path.basename(os.path.dirname(imgpath))
-                    maskname = filename.replace('leftImg8bit', 'gtFine_labelIds')
-                    maskpath = os.path.join(mask_folder, foldername, maskname)
+                    
+                    maskpath = os.path.join(mask_folder, filename)
                     if os.path.isfile(imgpath) and os.path.isfile(maskpath):
                         img_paths.append(imgpath)
                         mask_paths.append(maskpath)
@@ -210,3 +208,4 @@ def _get_city_pairs(folder, split='train'):
 if __name__ == '__main__':
     dataset = CitySegmentation()
     img, label = dataset[0]
+

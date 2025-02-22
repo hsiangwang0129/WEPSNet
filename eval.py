@@ -29,9 +29,23 @@ class Evaluator(object):
         self.val_loader = data.DataLoader(dataset=val_dataset,
                                           batch_size=1,
                                           shuffle=False)
-        # create network
-        self.model = get_fast_scnn(args.dataset, aux=args.aux, pretrained=True, root=args.save_folder).to(args.device)
+        # 載入模型
+        self.model = get_fast_scnn(args.dataset, aux=args.aux, pretrained=False).to(args.device)
+
+        # 只載入 `model_state_dict`
+        if args.resume:
+            print(f'📥 載入模型權重: {args.resume}')
+            checkpoint = torch.load(args.resume, map_location=args.device, weights_only=False)
+
+
+            # ✅ 只讀取 `model_state_dict`
+            if 'model_state_dict' in checkpoint:
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+            else:
+                self.model.load_state_dict(checkpoint)
+
         print('Finished loading model!')
+
 
         self.metric = SegmentationMetric(val_dataset.num_class)
 
@@ -57,6 +71,9 @@ class Evaluator(object):
 
 if __name__ == '__main__':
     args = parse_args()
+    # 確保 `aux` 存在
+    if not hasattr(args, "aux"):
+        args.aux = False
     evaluator = Evaluator(args)
     print('Testing model: ', args.model)
     evaluator.eval()

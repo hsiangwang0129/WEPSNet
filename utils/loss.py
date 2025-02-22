@@ -33,16 +33,21 @@ class MixSoftmaxCrossEntropyLoss(nn.CrossEntropyLoss):
 
 
 class SoftmaxCrossEntropyOHEMLoss(nn.Module):
-    def __init__(self, ignore_label=-1, thresh=0.7, min_kept=256, use_weight=True, **kwargs):
+    def __init__(self, ignore_label=-1, thresh=0.7, min_kept=256, use_weight=True, num_classes=2, **kwargs):
         super(SoftmaxCrossEntropyOHEMLoss, self).__init__()
         self.ignore_label = ignore_label
         self.thresh = float(thresh)
         self.min_kept = int(min_kept)
+        
         if use_weight:
             print("w/ class balance")
-            weight = torch.FloatTensor([0.8373, 0.918, 0.866, 1.0345, 1.0166, 0.9969, 0.9754,
-                                        1.0489, 0.8786, 1.0023, 0.9539, 0.9843, 1.1116, 0.9037, 1.0865, 1.0955,
-                                        1.0865, 1.1529, 1.0507])
+            if num_classes == 2:
+                weight = torch.FloatTensor([1.0, 1.0])  # 確保 weight 大小匹配
+            else:
+                weight = torch.FloatTensor([0.8373, 0.918, 0.866, 1.0345, 1.0166, 0.9969, 0.9754,
+                                            1.0489, 0.8786, 1.0023, 0.9539, 0.9843, 1.1116, 0.9037, 1.0865, 1.0955,
+                                            1.0865, 1.1529, 1.0507])[:num_classes]  # 限制 weight 長度
+            
             self.criterion = torch.nn.CrossEntropyLoss(weight=weight, ignore_index=ignore_label)
         else:
             print("w/o class balance")
@@ -85,7 +90,11 @@ class SoftmaxCrossEntropyOHEMLoss(nn.Module):
         input_label[valid_inds] = label
         valid_flag_new = input_label != self.ignore_label
         # print(np.sum(valid_flag_new))
-        target = Variable(torch.from_numpy(input_label.reshape(target.size())).long().cuda())
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        target = Variable(torch.from_numpy(input_label.reshape(target.size())).long().to(device))
+
+        
+
 
         return self.criterion(predict, target)
 
@@ -112,3 +121,4 @@ class MixSoftmaxCrossEntropyOHEMLoss(SoftmaxCrossEntropyOHEMLoss):
             return self._aux_forward(*inputs)
         else:
             return super(MixSoftmaxCrossEntropyOHEMLoss, self).forward(*inputs)
+
