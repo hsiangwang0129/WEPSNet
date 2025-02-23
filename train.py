@@ -169,7 +169,7 @@ def save_checkpoint(model, optimizer, epoch, args, best_pred, is_best=False):
     print(f'💾 已儲存最新模型: {latest_path}')
 
     if is_best:
-        best_path = os.path.join(directory, f'{args.model}_{args.dataset}.pth')
+        best_path = os.path.join(directory, f'{args.model}_{args.dataset}_best.pth')
         shutil.copyfile(latest_path, best_path)
         print(f'🏆 已儲存最佳模型: {best_path}')
 
