@@ -93,7 +93,7 @@ class CitySegmentation(data.Dataset):
             mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
 
         # 直接固定縮放 (不使用隨機裁剪)
-        target_size = (3200, 315)  
+        target_size = (3200, 320)  
         img = img.resize(target_size, Image.BILINEAR)
         mask = mask.resize(target_size, Image.NEAREST)
         img, mask = self._img_transform(img), self._mask_transform(mask)
@@ -106,7 +106,7 @@ class CitySegmentation(data.Dataset):
             mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
 
         # 直接固定縮放 (不使用隨機裁剪)
-        target_size = (3200, 315)  
+        target_size = (3200, 320)  
         img = img.resize(target_size, Image.BILINEAR)
         mask = mask.resize(target_size, Image.NEAREST)
         img, mask = self._img_transform(img), self._mask_transform(mask)
