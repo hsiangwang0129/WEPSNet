@@ -241,12 +241,13 @@ class GlobalFeatureExtractor(nn.Module):
         return x
 
 
-class FeatureFusionModule(nn.Module):
-    """Feature fusion module"""
+class FeatureFusionModuleConcat(nn.Module):
+    """Feature Fusion Module (FFM) with Concatenation Instead of Addition"""
 
     def __init__(self, highter_in_channels, lower_in_channels, out_channels, scale_factor=4, **kwargs):
-        super(FeatureFusionModule, self).__init__()
+        super(FeatureFusionModuleConcat, self).__init__()
         self.scale_factor = scale_factor
+
         self.dwconv = _DWConv(lower_in_channels, out_channels, 1)
         self.conv_lower_res = nn.Sequential(
             nn.Conv2d(out_channels, out_channels, 1),
@@ -256,18 +257,31 @@ class FeatureFusionModule(nn.Module):
             nn.Conv2d(highter_in_channels, out_channels, 1),
             nn.BatchNorm2d(out_channels)
         )
-        self.relu = nn.ReLU(True)
+
+        # use 1x1 Conv compress channel,ensure the output size match out_channels
+        self.conv_fusion = nn.Sequential(
+            nn.Conv2d(out_channels * 2, out_channels, 1),  # Concatenation will make C times 2
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(True)
+        )
 
     def forward(self, higher_res_feature, lower_res_feature):
-        lower_res_feature = F.interpolate(lower_res_feature, scale_factor=4, mode='bilinear', align_corners=True)
+        # Upsample lower_res_feature to match higher_res_feature's spatial dimensions
+        lower_res_feature = F.interpolate(lower_res_feature, 
+                                          size=higher_res_feature.size()[2:], 
+                                          mode='bilinear', 
+                                          align_corners=True)
         lower_res_feature = self.dwconv(lower_res_feature)
         lower_res_feature = self.conv_lower_res(lower_res_feature)
 
         higher_res_feature = self.conv_higher_res(higher_res_feature)
-        out = higher_res_feature + lower_res_feature
-        # print("we're in FFM!")
-        # print("out.shape = ",out.shape) # torch.Size([2, 128, 192, 48])
-        return self.relu(out)
+
+        # Concatenate features
+        fused_feature = torch.cat([higher_res_feature, lower_res_feature], dim=1)  
+
+        # Use 1x1 Conv to compress channel and ensure output size matches out_channels
+        out = self.conv_fusion(fused_feature)
+        return out
 
 
 
