@@ -20,7 +20,7 @@ class FastSCNN(nn.Module):
         self.learning_to_downsample = LearningToDownsample(32, 48, 64)
         self.global_feature_extractor = GlobalFeatureExtractor(64, [64, 96, 128], 128, 6, [2, 5, 2])
         self.feature_fusion = FeatureFusionModuleConcat(64, 128, 128)
-        self.classifier = Classifer(128, num_classes)
+        self.classifier = Classifier(128, num_classes)
         if self.aux:
             self.auxlayer = nn.Sequential(
                 nn.Conv2d(64, 32, 3, padding=1, bias=False),
